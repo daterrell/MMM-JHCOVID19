@@ -1,0 +1,63 @@
+.covid {
+    border-collapse: collapse !important;
+    margin-top: 1px;
+    line-height: 10px;
+}
+
+.covid .small-size {
+    font-size: 12px;
+}
+
+.covid .state {
+    font-size: 16px;
+    line-height: 1em;
+}
+
+.covid td {
+    padding: 1px 3px 1px 3px;
+}
+
+.covid td[class*="rank"] {
+    font-size: 14px;
+    text-align: left;
+}
+
+.covid .rank-up {
+    color: rgba(255, 0, 0, 0.5);
+}
+
+.covid .rank-down {
+    color: rgba(0, 128, 0, 0.5);
+}
+
+.covid .rank-even {
+    color: rgba(255, 166, 0, 0.5);
+}
+
+.covid .number {
+    font-size: 16px;
+    line-height: 1em;
+    text-align: right;
+    border: 1px solid lightgray;
+}
+
+.covid .highlight {
+    background-color: #404040;
+}
+
+.covid .center .number  {
+    text-align: center;
+    font-size: 14px;
+}
+
+.covid td.last-update {
+    text-align: center;
+    font-size: 11px;
+}
+
+.covid td.header  {
+    text-align: center;
+    font-size: 12px;
+    
+    padding: 5px 3px 5px 3px;
+}

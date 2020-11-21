@@ -1,0 +1,71 @@
+<table class="covid">
+  <tr>
+    <td class="header"></td>
+    <td class="header">By Total</td>
+    <td class="header">Cases</td>
+    <td class="header">New</td>
+    <td class="header">Deaths</td>
+  </tr>
+  {% set cnt = 1 %}
+  {% for state in byTotal %}
+    <tr>
+      {% if state.rankDelta == 0 %}
+        <td class="rank-even fa fa-fw fa-minus-circle"></td>
+      {% elif state.rankDelta and state.rankDelta > 0 %}
+        <td class="rank-up fa fa-fw fa-arrow-circle-up">{{ state.rankDelta }}</td>
+      {% else %}
+        <td class="rank-down fa fa-fw fa-arrow-circle-down">{{ state.rankDelta }}</td>
+      {% endif %}
+      <td class="state">{{ cnt }}. {{ state.name }}</td>
+      <td class="number">{{ state.total }}</td>
+      <td class="number">{{ state.new }}</td>
+      <td class="number deaths">{{ state.deaths }}</td>
+    </tr>
+    {% set cnt += 1 %}
+  {% endfor %}
+
+  <tr>
+    <td class="header"></td>
+    <td class="header">By New</td>
+    <td class="header">Cases</td>
+    <td class="header">New</td>
+    <td class="header">Deaths</td>
+  </tr>
+  {% set cnt = 1 %}
+  {% for state in byNew %}
+    <tr>
+      {% if state.rankDelta == 0 %}
+        <td class="rank-even fa fa-fw fa-minus-circle"></td>
+      {% elif state.rankDelta and state.rankDelta > 0 %}
+        <td class="rank-up fa fa-fw fa-arrow-circle-up">{{ state.rankDelta }}</td>
+      {% else %}
+        <td class="rank-down fa fa-fw fa-arrow-circle-down">{{ state.rankDelta }}</td>
+      {% endif %}
+      <td class="state">{{ cnt }}. {{ state.name }}</td>
+      <td class="number">{{ state.total }}</td>
+      <td class="number">{{ state.new }}</td>
+      <td class="number deaths">{{ state.deaths }}</td>
+    </tr>
+    {% set cnt += 1 %}
+  {% endfor %}
+  <tr>
+    <td class="header"></td>
+    <td class="header"></td>
+    <td class="header">Cases</td>
+    <td class="header">New</td>
+    <td class="header">Deaths</td>
+  </tr>
+  <tr>
+    <td></td>
+    <td class="state">Totals</td>
+    <td class="number">{{ total }}</td>
+    <td class="number">{{ new }}</td>
+    <td class="number deaths">{{ deaths }}</td>
+  </tr>
+  <tr>
+    <td class="center" colspan="5"></td>
+  </tr>
+  <tr>
+    <td class="center last-update" colspan="5">Last updated: {{ updated }}</td>
+  </tr>
+</table>
