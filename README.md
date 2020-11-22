@@ -29,6 +29,7 @@ This was the first module I wrote, and as there wasn't a module to display this 
 ## Configuration options
 
 | Option | Description |
+|:----------:|:-------------|
 | `updateInterval` | *Optional* How frequently to update (default: 60000ms == 1hr) |
 | `alwaysShowState`| *Optional* State name to always show, despite its rank (default: California) |
 | `highlightState` | *Optional* State name to highlight (default: California) |
