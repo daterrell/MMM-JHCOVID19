@@ -8,16 +8,12 @@
  */
 
 Module.register("MMM-JHCOVID19", {
-    error: false,
     payload: null,
 
     defaults: {
-        header: "COVID-19",
-        updateInterval: 60000, // update interval in milliseconds
-        timeFormat: "MMMM Do YYYY, h:mm:ss a", // April 7th 2020, 03:08:10 pm
+        updateInterval: 180000, // update interval in milliseconds
         alwaysShowState: "California",
         highlightState: "California",
-        timezone: "America/Los_Angeles"
     },
 
     templateData: {
@@ -45,10 +41,6 @@ Module.register("MMM-JHCOVID19", {
         }, this.config.updateInterval);
     },
 
-    getScripts: function () {
-        return ["moment.js", "moment-timezone.js"];
-    },
-
     getStyles: function () {
         return ["MMM-JHCOVID19.css", "font-awesome.css"];
     },
@@ -58,9 +50,12 @@ Module.register("MMM-JHCOVID19", {
     },
 
     socketNotificationReceived: function (notification, payload) {
-        if (notification === "ERROR" ||
-            notification === "DATA_RESULT") {
-            this.error = notification === "ERROR";
+        if (notification === "ERROR") {
+            this.hide();
+            return;
+        }
+
+        if (notification === "DATA_RESULT") {
             this.payload = payload;
             this.updateTemplateData();
             this.updateDom(this.config.fadeSpeed);
@@ -80,12 +75,12 @@ Module.register("MMM-JHCOVID19", {
     },
 
     numberWithCommas: function (x) {
-        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        if (x) return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     },
 
-    addStates: function (funcConfirmed, funcDeaths) {
-        var states = this.payload.states.sort((a, b) => funcConfirmed(b) - funcConfirmed(a));
-        var previous = this.payload.previous.sort((a, b) => funcConfirmed(b) - funcConfirmed(a));
+    addStates: function (now, old, funcConfirmed, funcDeaths) {
+        var states = now.sort((a, b) => funcConfirmed(b) - funcConfirmed(a));
+        var previous = old.sort((a, b) => funcConfirmed(b) - funcConfirmed(a));
         var total = states.reduce((t, n) => t + funcConfirmed(n), 0);
         var deaths = states.reduce((t, n) => t + funcDeaths(n), 0);
 
@@ -104,8 +99,9 @@ Module.register("MMM-JHCOVID19", {
                 retVal.states.push(this.stateTemplate(false, i + 1, rankDelta(state, i), state.state, funcConfirmed(state), funcDeaths(state)));
             } else if (
                 this.config.alwaysShowState !== "" &&
-                state.name === this.config.alwaysShowState) {
-                if (state.rank > 6) toArr.push(this.stateTemplate(true));
+                state.state === this.config.alwaysShowState) {
+
+                if (i + 1 > 6) retVal.states.push(this.stateTemplate(true));
 
                 retVal.states.push(this.stateTemplate(false, i + 1, rankDelta(state, i), state.state, funcConfirmed(state), funcDeaths(state)));
             }
@@ -115,16 +111,9 @@ Module.register("MMM-JHCOVID19", {
     },
 
     updateTemplateData: function () {
-        if (this.error) {
-            var p = document.createElement('div');
-            p.innerText = this.name + ' - ERROR: ' + this.payload;
-            return p;
-        } else if (Object.entries(this.payload).length === 0) {
-            return null;
-        }
+        this.templateData.updated = moment(this.payload.updated).tz(this.config.timezone).calendar();
 
-        this.templateData.updated = moment(this.payload.lastUpdated).tz(this.config.timezone).calendar();
-        this.templateData.byTotal = this.addStates((state) => state.confirmed, (state) => state.deaths);
-        this.templateData.byNew = this.addStates((state) => state.confirmedDelta, (state) => state.deathsDelta);
+        this.templateData.byTotal = this.addStates(this.payload.hourly, this.payload.previous, (state) => state.confirmed, (state) => state.deaths);
+        this.templateData.byNew = this.addStates(this.payload.delta, this.payload.previous, (state) => state.confirmed, (state) => state.deaths);
     },
 });
