@@ -14,6 +14,7 @@ Module.register("MMM-JHCOVID19", {
         updateInterval: 180000, // update interval in milliseconds
         alwaysShowState: "California",
         highlightState: "California",
+        timezone: "America/Los_Angeles"
     },
 
     templateData: {
@@ -44,6 +45,10 @@ Module.register("MMM-JHCOVID19", {
     getStyles: function () {
         return ["MMM-JHCOVID19.css", "font-awesome.css"];
     },
+    
+    getScripts: function () {
+		return ["moment.js", "moment-timezone.js"];
+	},
 
     getInfo: function () {
         this.sendSocketNotification("GET_DATA");
@@ -78,9 +83,9 @@ Module.register("MMM-JHCOVID19", {
         if (x) return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     },
 
-    addStates: function (now, old, funcConfirmed, funcDeaths) {
-        var states = now.sort((a, b) => funcConfirmed(b) - funcConfirmed(a));
-        var previous = old.sort((a, b) => funcConfirmed(b) - funcConfirmed(a));
+    addStates: function (funcConfirmed, funcDeaths) {
+        var states = this.payload.hourlyDelta.sort((a, b) => funcConfirmed(b) - funcConfirmed(a));
+        var previous = this.payload.previous.sort((a, b) => funcConfirmed(b) - funcConfirmed(a));
         var total = states.reduce((t, n) => t + funcConfirmed(n), 0);
         var deaths = states.reduce((t, n) => t + funcDeaths(n), 0);
 
@@ -113,7 +118,7 @@ Module.register("MMM-JHCOVID19", {
     updateTemplateData: function () {
         this.templateData.updated = moment(this.payload.updated).tz(this.config.timezone).calendar();
 
-        this.templateData.byTotal = this.addStates(this.payload.hourly, this.payload.previous, (state) => state.confirmed, (state) => state.deaths);
-        this.templateData.byNew = this.addStates(this.payload.delta, this.payload.previous, (state) => state.confirmed, (state) => state.deaths);
+        this.templateData.byTotal = this.addStates((state) => state.confirmed, (state) => state.deaths);
+        this.templateData.byNew = this.addStates((state) => state.confirmedDelta, (state) => state.deathsDelta);
     },
 });
