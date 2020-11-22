@@ -8,42 +8,26 @@
  */
 
 Module.register("MMM-JHCOVID19", {
-    jhdata: {},
     error: false,
+    payload: null,
 
     defaults: {
         header: "COVID-19",
-        headerRowClass: "small", // small, medium or big
-        infoRowClass: "big", // small, medium or big
         updateInterval: 60000, // update interval in milliseconds
         timeFormat: "MMMM Do YYYY, h:mm:ss a", // April 7th 2020, 03:08:10 pm
-        alwaysShowState: "Florida",
+        alwaysShowState: "California",
         highlightState: "California",
         timezone: "America/Los_Angeles"
     },
 
     templateData: {
-        total: null,
-        new: null,
-        deaths: null,
         updated: null,
-        byNew: {},
-        byTotal: {}
-    },
-
-    stateTemplate: function(delta, name, casesTotal, casesNew, deathsTotal, deathsNew) {
-        return {
-            rankDelta: delta,
-            stateName: name,
-            caseTotal: casesTotal,
-            caseNew: casesNew,
-            deathTota: deathsTotal,
-            deathNew: deathsNew
-        };
+        byNew: null,
+        byTotal: null,
     },
 
     getTemplate: function () {
-        return "MMM-CountDown.njk"
+        return "MMM-JHCOVID19.njk"
     },
 
     getTemplateData: function () {
@@ -61,182 +45,86 @@ Module.register("MMM-JHCOVID19", {
         }, this.config.updateInterval);
     },
 
-	getScripts: function () {
-		return ["moment.js", "moment-timezone.js"];
-	},
+    getScripts: function () {
+        return ["moment.js", "moment-timezone.js"];
+    },
 
     getStyles: function () {
         return ["MMM-JHCOVID19.css", "font-awesome.css"];
     },
 
-    getTranslations: function () {
-        return false;
-    },
-
     getInfo: function () {
-        this.jhdata = {};
         this.sendSocketNotification("GET_DATA");
     },
 
     socketNotificationReceived: function (notification, payload) {
-        if (notification === "ERROR" || 
+        if (notification === "ERROR" ||
             notification === "DATA_RESULT") {
-             this.error = notification === "ERROR";
-             this.jhdata = payload; 
-             this.updateDom(this.config.fadeSpeed);
+            this.error = notification === "ERROR";
+            this.payload = payload;
+            this.updateTemplateData();
+            this.updateDom(this.config.fadeSpeed);
         }
     },
 
-    getDom: function () {
-        if (this.error){
+    stateTemplate: function (ellipses, rank, delta, name, total, deaths) {
+        return {
+            ellipses: ellipses,
+            rank, rank,
+            rankDelta: delta,
+            name: name,
+            total: this.numberWithCommas(total),
+            deaths: this.numberWithCommas(deaths),
+            highlight: name === this.config.highlightState
+        };
+    },
+
+    numberWithCommas: function (x) {
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    },
+
+    addStates: function (funcConfirmed, funcDeaths) {
+        var states = this.payload.states.sort((a, b) => funcConfirmed(b) - funcConfirmed(a));
+        var previous = this.payload.previous.sort((a, b) => funcConfirmed(b) - funcConfirmed(a));
+        var total = states.reduce((t, n) => t + funcConfirmed(n), 0);
+        var deaths = states.reduce((t, n) => t + funcDeaths(n), 0);
+
+        var retVal = {
+            total: this.numberWithCommas(total),
+            deaths: this.numberWithCommas(deaths),
+            states: []
+        };
+
+        var rankDelta = (state, i) => previous.findIndex(s => state.state === s.state) - i;
+
+        for (var i = 0; i < states.length; i++) {
+            var state = states[i];
+
+            if (i < 5) {
+                retVal.states.push(this.stateTemplate(false, i + 1, rankDelta(state, i), state.state, funcConfirmed(state), funcDeaths(state)));
+            } else if (
+                this.config.alwaysShowState !== "" &&
+                state.name === this.config.alwaysShowState) {
+                if (state.rank > 6) toArr.push(this.stateTemplate(true));
+
+                retVal.states.push(this.stateTemplate(false, i + 1, rankDelta(state, i), state.state, funcConfirmed(state), funcDeaths(state)));
+            }
+        }
+
+        return retVal;
+    },
+
+    updateTemplateData: function () {
+        if (this.error) {
             var p = document.createElement('div');
-            p.innerText = this.name + ' - ERROR: ' + this.jhdata;
+            p.innerText = this.name + ' - ERROR: ' + this.payload;
             return p;
-        }
-        
-        this.templateData.total = this.jhdata.states.map(item => item.confirmed).reduce((p, n) => p + n);
-        this.templateData.new = this.jhdata.states.map(item => item.confirmedDelta).reduce((p, n) => p + n);
-        this.templateData.deaths = this.jhdata.states.map(item => item.deathsDelta).reduce((p, n) => p + n);
-        var totalNew = states.map(item => item.confirmedDelta).reduce((p, n) => p + n);
-        var totalDeaths = states.map(item => item.deathsDelta).reduce((p, n) => p + n);
-        var total = states.map(item => item.confirmed).reduce((p, n) => p + n);
-
-
-
-/**
- * 
- */
-        var wrapper = document.createElement("table");
-        if (Object.entries(this.jhdata).length === 0) return wrapper;
-
-        newTd = function (innerData, innerClass) {
-            var td = document.createElement("td");
-
-            if (innerClass && innerClass !== "") td.className = innerClass;
-            if (innerData && innerData !== "") td.innerHTML = innerData;
-
-            return td;
-        };
-
-        totalsRow = function (states) {
-            var row = document.createElement("tr");
-
-            row.appendChild(newTd());
-            row.appendChild(newTd("Totals", "state"));
-
-            var totalNew = states.map(item => item.confirmedDelta).reduce((p, n) => p + n);
-            var totalDeaths = states.map(item => item.deathsDelta).reduce((p, n) => p + n);
-            var total = states.map(item => item.confirmed).reduce((p, n) => p + n);
-
-            row.appendChild(newTd(numberWithCommas(total), "number"));
-            row.appendChild(newTd(numberWithCommas(totalNew), "number"));
-            row.appendChild(newTd(numberWithCommas(totalDeaths), "number deaths"));
-
-            return row;
-        };
-
-        singleCell = function (inner, trClass, tdClass) {
-            var row = document.createElement("tr");
-            if (trClass && trClass !== "") row.className += " " + trClass;
-            var cell = document.createElement("td");
-            cell.className = "center";
-            if (tdClass && tdClass !== "") cell.className += " " + tdClass;
-            row.appendChild(cell);
-            cell.innerHTML = inner;
-            cell.colSpan = 5;
-            return row;
-        };
-
-        addStates = function (states, previous) {
-            for (var i = 0; i < previous.length; i++) {
-                previous[i].rank = i + 1;
-            }
-
-            for (var i = 0; i < states.length; i++) {
-                states[i].rank = i + 1;
-                if (i < 5) {
-                    wrapper.appendChild(stateRow(this.config, states[i], previous.findIndex(s => states[i].state === s.state) + 1));
-                }
-
-                if (this.config.alwaysShowState !== "") {
-                    if (states[i].state === this.config.alwaysShowState && states[i].rank > 5) {
-                        if (states[i].rank > 6) wrapper.appendChild(singleCell(". . ."));
-                        wrapper.appendChild(stateRow(this.config, states[i], previous.findIndex(s => states[i].state === s.state) + 1));
-                    }
-                }
-            }
-        };
-
-        stateRow = function (config, state, previousRank) {
-            var row = document.createElement("tr");
-            if (state === config.highlightState)
-                row.className += " highlight";
-
-            var rankDeltaIcon = null;
-            var rankDelta = previousRank - state.rank;
-
-            if (state.rank < previousRank){
-                rankDeltaIcon = newTd(Math.abs(rankDelta), "rank-up fa fa-fw fa-arrow-circle-up");
-            }
-            else if (state.rank == previousRank) {
-                rankDeltaIcon = newTd("", "rank-even fa fa-fw fa-minus-circle");
-            }
-            else if (state.rank > previousRank) {
-                rankDeltaIcon = newTd(Math.abs(rankDelta), "rank-down fa fa-fw fa-arrow-circle-down");
-            }
-
-            row.appendChild(rankDeltaIcon);
-            row.appendChild(newTd(state.rank + '. ' + state.state, "state"));
-            row.appendChild(newTd(numberWithCommas(state.confirmed), "number"));
-            row.appendChild(newTd(numberWithCommas(state.confirmedDelta), "number"));
-            row.appendChild(newTd(numberWithCommas(state.deathsDelta), "number deaths"));
-
-            return row;
-        };
-
-        header = function (heading) {
-            var globalHeaderRow = document.createElement("tr");
-
-            globalHeaderRow.appendChild(headerRow("")); // Rank delta
-            globalHeaderRow.appendChild(headerRow(heading || ""));
-            globalHeaderRow.appendChild(headerRow("Cases"));
-            globalHeaderRow.appendChild(headerRow("New"));
-            globalHeaderRow.appendChild(headerRow("Deaths"));
-
-            return globalHeaderRow;
-        };
-
-        headerRow = function (inner) {
-            return newTd(inner, "header");
-        };
-
-        numberWithCommas = function (x) {
-            return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        } else if (Object.entries(this.payload).length === 0) {
+            return null;
         }
 
-        wrapper.className = this.config.tableClass || "covid"
-        wrapper.appendChild(header('By Total'));
-
-        addStates(
-            this.jhdata.states.sort(
-                (a, b) => b.confirmed - a.confirmed), 
-            this.jhdata.previous.sort(
-                (a, b) => b.confirmed - a.confirmed));
-
-        wrapper.appendChild(header('By New'));
-        addStates(
-            this.jhdata.states.sort(
-                (a, b) => b.confirmedDelta - a.confirmedDelta), 
-            this.jhdata.previous.sort(
-                (a, b) => b.confirmedDelta - a.confirmedDelta));
-
-        wrapper.appendChild(header());
-        wrapper.appendChild(totalsRow(this.jhdata.states));
-        wrapper.appendChild(singleCell(""));
-        var updated = moment(this.jhdata.lastUpdated);
-        var updated = updated.tz(this.config.timezone);
-        wrapper.appendChild(singleCell("Last updated: " + updated.calendar(), "", "last-update"));
-
-        return wrapper
-    }
-})
+        this.templateData.updated = moment(this.payload.lastUpdated).tz(this.config.timezone).calendar();
+        this.templateData.byTotal = this.addStates((state) => state.confirmed, (state) => state.deaths);
+        this.templateData.byNew = this.addStates((state) => state.confirmedDelta, (state) => state.deathsDelta);
+    },
+});
