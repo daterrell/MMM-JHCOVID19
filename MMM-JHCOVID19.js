@@ -9,6 +9,7 @@
 
 Module.register("MMM-JHCOVID19", {
     payload: null,
+    timer: null,
 
     defaults: {
         updateInterval: 180000, // update interval in milliseconds
@@ -35,28 +36,36 @@ Module.register("MMM-JHCOVID19", {
         console.log(this.name + "[MAIN MODULE]: Starting up MMM-JHCOVID19");
 
         this.getInfo();
-
-        var self = this;
-        setInterval(function () {
-            self.getInfo();
-        }, this.config.updateInterval);
+        this.setTimer();
     },
 
     getStyles: function () {
         return ["MMM-JHCOVID19.css", "font-awesome.css"];
     },
-    
+
     getScripts: function () {
-		return ["moment.js", "moment-timezone.js"];
-	},
+        return ["moment.js", "moment-timezone.js"];
+    },
 
     getInfo: function () {
         this.sendSocketNotification("GET_DATA");
     },
 
+    setTimer: function (interval = 60000) {
+        var self = this;
+
+        if (this.timer) clearTimeout(this.timer);
+
+        this.timer = setTimeout(() => {
+            self.getInfo();
+        }, interval);
+    },
+
     socketNotificationReceived: function (notification, payload) {
+        clearTimeout(this.timer);
+        
         if (notification === "ERROR") {
-            this.hide();
+            setTimer();
             return;
         }
 
@@ -65,6 +74,11 @@ Module.register("MMM-JHCOVID19", {
             this.updateTemplateData();
             this.updateDom(this.config.fadeSpeed);
         }
+
+        var update = new Date(this.payload.updated);
+        update = new Date(update.getTime() + 65 * 60000);
+        var diff = update.getTime() - new Date().getTime();
+        this.setTimer(diff);
     },
 
     stateTemplate: function (ellipses, rank, delta, name, total, deaths) {
