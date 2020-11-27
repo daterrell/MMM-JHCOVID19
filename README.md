@@ -1,6 +1,6 @@
 # MMM-CountDown
 
-This is a module for the [MagicMirror²](https://github.com/MichMich/MagicMirror/) to display Covid counts for the United States, source from the [COVID-19 Data Repository by the Center for Systems Science and Engineering (CSSE) at Johns Hopkins University](https://github.com/CSSEGISandData/COVID-19) for the 2019 Novel Coronavirus; updated daily.
+This is a module for the [MagicMirror²](https://github.com/MichMich/MagicMirror/) to display Covid counts for the United States, source from the [COVID-19 Data Repository by the Center for Systems Science and Engineering (CSSE) at Johns Hopkins University](https://github.com/CSSEGISandData/COVID-19) for the 2019 Novel Coronavirus; updated hourly.
 
 ![Screenshot](.github/MMM-JHCOVID19.png)![Screenshot](.github/MMM-JHCOVID19-2.png)
 
